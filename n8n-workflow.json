@@ -1,0 +1,253 @@
+{
+  "name": "MBTI Personality Quiz Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "mbti-quiz",
+        "responseMode": "responseNode",
+        "options": {
+          "cors": true,
+          "allowedOrigins": "*"
+        }
+      },
+      "id": "webhook-node",
+      "name": "Webhook - Receive Quiz Data",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "webhookId": "mbti-quiz-webhook"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "email",
+              "name": "email",
+              "value": "={{ $json.body.email }}",
+              "type": "string"
+            },
+            {
+              "id": "answers",
+              "name": "answers",
+              "value": "={{ $json.body.answers }}",
+              "type": "object"
+            },
+            {
+              "id": "timestamp",
+              "name": "timestamp",
+              "value": "={{ $json.body.timestamp }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-node",
+      "name": "Extract Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [
+        450,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $credentials.httpHeaderAuth.value }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": []
+        },
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"gpt-4\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are an expert in MBTI (Myers-Briggs Type Indicator) personality assessment. Analyze the user's answers and determine their MBTI personality type. Return ONLY the 4-letter MBTI type (e.g., INTJ, ENFP, etc.) followed by a brief description (2-3 sentences) of what this personality type means.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Analyze these quiz answers and determine the MBTI personality type:\\n\\nAnswers: \" + JSON.stringify($json.answers) + \"\\n\\nFor each question, the answer indicates a preference:\\n- introvert/extravert: I or E\\n- sensing/intuition: S or N\\n- thinking/feeling: T or F\\n- judging/perceiving: J or P\\n\\nCount the preferences and determine the MBTI type. Format your response as:\\nMBTI Type: [TYPE]\\nDescription: [Brief description]\"\n    }\n  ],\n  \"temperature\": 0.7,\n  \"max_tokens\": 500\n}",
+        "options": {}
+      },
+      "id": "openai-node",
+      "name": "AI Analysis - OpenAI",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        650,
+        300
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "openai-credentials",
+          "name": "OpenAI API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "mbtiResult",
+              "name": "mbtiResult",
+              "value": "Your MBTI personality results have been sent to your email address. Please check your inbox!",
+              "type": "string"
+            },
+            {
+              "id": "email",
+              "name": "email",
+              "value": "={{ $('Extract Data').item.json.email }}",
+              "type": "string"
+            },
+            {
+              "id": "answers",
+              "name": "answers",
+              "value": "={{ $('Extract Data').item.json.answers }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "format-result",
+      "name": "Format Result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [
+        850,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"mbtiResult\": $json.mbtiResult } }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "GET, POST, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type"
+              }
+            ]
+          }
+        }
+      },
+      "id": "respond-node",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1050,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "noreply@yourdomain.com",
+        "toEmail": "={{ $('Extract Data').item.json.email }}",
+        "subject": "Your MBTI Personality Quiz Results",
+        "emailType": "html",
+        "message": "=<!DOCTYPE html>\n<html>\n<head>\n    <style>\n        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }\n        .container { max-width: 600px; margin: 0 auto; padding: 20px; }\n        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }\n        .content { background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }\n        .result-box { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 5px solid #667eea; }\n        .answers-section { margin-top: 30px; padding: 20px; background: white; border-radius: 8px; }\n        .answer-item { padding: 10px; border-bottom: 1px solid #eee; }\n        .answer-item:last-child { border-bottom: none; }\n    </style>\n</head>\n<body>\n    <div class=\"container\">\n        <div class=\"header\">\n            <h1>🧠 Your MBTI Personality Results</h1>\n        </div>\n        <div class=\"content\">\n            <div class=\"result-box\">\n                <h2>Your Personality Type</h2>\n                <p style=\"font-size: 1.2em; margin-top: 10px;\">\" + ($json.mbtiResult || 'Processing...') + \"</p>\n            </div>\n            \n            <div class=\"answers-section\">\n                <h3>Your Answers Summary</h3>\n                <p>Question 1: \" + ($json.answers && $json.answers['1'] ? $json.answers['1'] : 'Not answered') + \"</p>\n                <p>Question 2: \" + ($json.answers && $json.answers['2'] ? $json.answers['2'] : 'Not answered') + \"</p>\n                <p>Question 3: \" + ($json.answers && $json.answers['3'] ? $json.answers['3'] : 'Not answered') + \"</p>\n                <p>Question 4: \" + ($json.answers && $json.answers['4'] ? $json.answers['4'] : 'Not answered') + \"</p>\n                <p>Question 5: \" + ($json.answers && $json.answers['5'] ? $json.answers['5'] : 'Not answered') + \"</p>\n                <p>Question 6: \" + ($json.answers && $json.answers['6'] ? $json.answers['6'] : 'Not answered') + \"</p>\n                <p>Question 7: \" + ($json.answers && $json.answers['7'] ? $json.answers['7'] : 'Not answered') + \"</p>\n                <p>Question 8: \" + ($json.answers && $json.answers['8'] ? $json.answers['8'] : 'Not answered') + \"</p>\n            </div>\n            \n            <p style=\"margin-top: 30px; color: #666; font-size: 0.9em;\">Thank you for taking the MBTI Personality Quiz!</p>\n        </div>\n    </div>\n</body>\n</html>",
+        "options": {}
+      },
+      "id": "email-node",
+      "name": "Send Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        850,
+        450
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "smtp-credentials",
+          "name": "SMTP Account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook - Receive Quiz Data": {
+      "main": [
+        [
+          {
+            "node": "Extract Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Data": {
+      "main": [
+        [
+          {
+            "node": "AI Analysis - OpenAI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Analysis - OpenAI": {
+      "main": [
+        [
+          {
+            "node": "Format Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Result": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2024-01-01T00:00:00.000Z",
+  "versionId": "1"
+}

@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MBTI Personality Quiz</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.1em;
+        }
+
+        .question-container {
+            margin-bottom: 50px;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            border-left: 5px solid #667eea;
+        }
+
+        .question-number {
+            color: #667eea;
+            font-weight: bold;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .question-text {
+            font-size: 1.3em;
+            color: #333;
+            margin-bottom: 25px;
+            font-weight: 600;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .option {
+            position: relative;
+            cursor: pointer;
+            border: 3px solid #e0e0e0;
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .option:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            border-color: #667eea;
+        }
+
+        .option.selected {
+            border-color: #667eea;
+            background: #f0f4ff;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
+        }
+
+        .option img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .option-label {
+            padding: 12px;
+            text-align: center;
+            font-weight: 600;
+            color: #333;
+            background: white;
+        }
+
+        .option.selected .option-label {
+            background: #667eea;
+            color: white;
+        }
+
+        .email-section {
+            margin: 40px 0;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 15px;
+        }
+
+        .email-section label {
+            display: block;
+            margin-bottom: 10px;
+            color: #333;
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+
+        .email-section input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        .email-section input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 20px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+            font-size: 1.1em;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .result {
+            display: none;
+            margin-top: 30px;
+            padding: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        .result.show {
+            display: block;
+        }
+
+        .result h2 {
+            margin-bottom: 15px;
+            font-size: 2em;
+        }
+
+        .result p {
+            font-size: 1.2em;
+            line-height: 1.6;
+        }
+
+        .error {
+            display: none;
+            margin-top: 20px;
+            padding: 15px;
+            background: #ff6b6b;
+            color: white;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .error.show {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+
+            .options-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🧠 MBTI Personality Quiz</h1>
+        <p class="subtitle">Discover your personality type through image-based questions</p>
+
+        <form id="quizForm">
+            <!-- Question 1 -->
+            <div class="question-container">
+                <div class="question-number">Question 1 of 8</div>
+                <div class="question-text">How do you prefer to spend your free time?</div>
+                <div class="options-grid">
+                    <div class="option" data-question="1" data-answer="introvert">
+                        <img src="https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=300&h=300&fit=crop"
+                            alt="Reading alone">
+                        <div class="option-label">Reading alone</div>
+                    </div>
+                    <div class="option" data-question="1" data-answer="extravert">
+                        <img src="https://images.unsplash.com/photo-1511632765486-a01980e01a18?w=300&h=300&fit=crop"
+                            alt="Social gathering">
+                        <div class="option-label">Social gathering</div>
+                    </div>
+                    <div class="option" data-question="1" data-answer="introvert">
+                        <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=300&h=300&fit=crop"
+                            alt="Nature walk">
+                        <div class="option-label">Nature walk</div>
+                    </div>
+                    <div class="option" data-question="1" data-answer="extravert">
+                        <img src="https://images.unsplash.com/photo-1511578314322-379afb476865?w=300&h=300&fit=crop"
+                            alt="Party or event">
+                        <div class="option-label">Party or event</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Question 2 -->
+            <div class="question-container">
+                <div class="question-number">Question 2 of 8</div>
+                <div class="question-text">How do you make decisions?</div>
+                <div class="options-grid">
+                    <div class="option" data-question="2" data-answer="thinking">
+                        <img src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=300&h=300&fit=crop"
+                            alt="Logic and analysis">
+                        <div class="option-label">Logic and analysis</div>
+                    </div>
+                    <div class="option" data-question="2" data-answer="feeling">
+                        <img src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=300&h=300&fit=crop"
+                            alt="Values and emotions">
+                        <div class="option-label">Values and emotions</div>
+                    </div>
+                    <div class="option" data-question="2" data-answer="thinking">
+                        <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=300&h=300&fit=crop"
+                            alt="Data and facts">
+                        <div class="option-label">Data and facts</div>
+                    </div>
+                    <div class="option" data-question="2" data-answer="feeling">
+                        <img src="https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?w=300&h=300&fit=crop"
+                            alt="People's feelings">
+                        <div class="option-label">People's feelings</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Question 3 -->
+            <div class="question-container">
+                <div class="question-number">Question 3 of 8</div>
+                <div class="question-text">How do you process information?</div>
+                <div class="options-grid">
+                    <div class="option" data-question="3" data-answer="sensing">
+                        <img src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=300&h=300&fit=crop"
+                            alt="Concrete details">
+                        <div class="option-label">Concrete details</div>
+                    </div>
+                    <div class="option" data-question="3" data-answer="intuition">
+                        <img src="https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=300&h=300&fit=crop"
+                            alt="Big picture">
+                        <div class="option-label">Big picture</div>
+                    </div>
+                    <div class="option" data-question="3" data-answer="sensing">
+                        <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=300&h=300&fit=crop"
+                            alt="Practical facts">
+                        <div class="option-label">Practical facts</div>
+                    </div>
+                    <div class="option" data-question="3" data-answer="intuition">
+                        <img src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=300&h=300&fit=crop"
+                            alt="Possibilities">
+                        <div class="option-label">Possibilities</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Question 4 -->
+            <div class="question-container">
+                <div class="question-number">Question 4 of 8</div>
+                <div class="question-text">How do you approach your work?</div>
+                <div class="options-grid">
+                    <div class="option" data-question="4" data-answer="judging">
+                        <img src="https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?w=300&h=300&fit=crop"
+                            alt="Planned and organized">
+                        <div class="option-label">Planned and organized</div>
+                    </div>
+                    <div class="option" data-question="4" data-answer="perceiving">
+                        <img src="https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=300&h=300&fit=crop"
+                            alt="Flexible and spontaneous">
+                        <div class="option-label">Flexible and spontaneous</div>
+                    </div>
+                    <div class="option" data-question="4" data-answer="judging">
+                        <img src="https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=300&h=300&fit=crop"
+                            alt="Structured schedule">
+                        <div class="option-label">Structured schedule</div>
+                    </div>
+                    <div class="option" data-question="4" data-answer="perceiving">
+                        <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=300&h=300&fit=crop"
+                            alt="Go with the flow">
+                        <div class="option-label">Go with the flow</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Question 5 -->
+            <div class="question-container">
+                <div class="question-number">Question 5 of 8</div>
+                <div class="question-text">What energizes you more?</div>
+                <div class="options-grid">
+                    <div class="option" data-question="5" data-answer="introvert">
+                        <img src="https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=300&h=300&fit=crop"
+                            alt="Quiet reflection">
+                        <div class="option-label">Quiet reflection</div>
+                    </div>
+                    <div class="option" data-question="5" data-answer="extravert">
+                        <img src="https://images.unsplash.com/photo-1511632765486-a01980e01a18?w=300&h=300&fit=crop"
+                            alt="Active interaction">
+                        <div class="option-label">Active interaction</div>
+                    </div>
+                    <div class="option" data-question="5" data-answer="introvert">
+                        <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=300&h=300&fit=crop"
+                            alt="Solo activities">
+                        <div class="option-label">Solo activities</div>
+                    </div>
+                    <div class="option" data-question="5" data-answer="extravert">
+                        <img src="https://images.unsplash.com/photo-1511578314322-379afb476865?w=300&h=300&fit=crop"
+                            alt="Group activities">
+                        <div class="option-label">Group activities</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Question 6 -->
+            <div class="question-container">
+                <div class="question-number">Question 6 of 8</div>
+                <div class="question-text">What matters more to you?</div>
+                <div class="options-grid">
+                    <div class="option" data-question="6" data-answer="thinking">
+                        <img src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=300&h=300&fit=crop"
+                            alt="Truth and fairness">
+                        <div class="option-label">Truth and fairness</div>
+                    </div>
+                    <div class="option" data-question="6" data-answer="feeling">
+                        <img src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=300&h=300&fit=crop"
+                            alt="Harmony and values">
+                        <div class="option-label">Harmony and values</div>
+                    </div>
+                    <div class="option" data-question="6" data-answer="thinking">
+                        <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=300&h=300&fit=crop"
+                            alt="Objective analysis">
+                        <div class="option-label">Objective analysis</div>
+                    </div>
+                    <div class="option" data-question="6" data-answer="feeling">
+                        <img src="https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?w=300&h=300&fit=crop"
+                            alt="Personal values">
+                        <div class="option-label">Personal values</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Question 7 -->
+            <div class="question-container">
+                <div class="question-number">Question 7 of 8</div>
+                <div class="question-text">How do you prefer to learn?</div>
+                <div class="options-grid">
+                    <div class="option" data-question="7" data-answer="sensing">
+                        <img src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=300&h=300&fit=crop"
+                            alt="Step-by-step">
+                        <div class="option-label">Step-by-step</div>
+                    </div>
+                    <div class="option" data-question="7" data-answer="intuition">
+                        <img src="https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=300&h=300&fit=crop"
+                            alt="Patterns and concepts">
+                        <div class="option-label">Patterns and concepts</div>
+                    </div>
+                    <div class="option" data-question="7" data-answer="sensing">
+                        <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=300&h=300&fit=crop"
+                            alt="Hands-on experience">
+                        <div class="option-label">Hands-on experience</div>
+                    </div>
+                    <div class="option" data-question="7" data-answer="intuition">
+                        <img src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=300&h=300&fit=crop"
+                            alt="Theoretical ideas">
+                        <div class="option-label">Theoretical ideas</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Question 8 -->
+            <div class="question-container">
+                <div class="question-number">Question 8 of 8</div>
+                <div class="question-text">How do you handle deadlines?</div>
+                <div class="options-grid">
+                    <div class="option" data-question="8" data-answer="judging">
+                        <img src="https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?w=300&h=300&fit=crop"
+                            alt="Plan ahead">
+                        <div class="option-label">Plan ahead</div>
+                    </div>
+                    <div class="option" data-question="8" data-answer="perceiving">
+                        <img src="https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=300&h=300&fit=crop"
+                            alt="Work under pressure">
+                        <div class="option-label">Work under pressure</div>
+                    </div>
+                    <div class="option" data-question="8" data-answer="judging">
+                        <img src="https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=300&h=300&fit=crop"
+                            alt="Finish early">
+                        <div class="option-label">Finish early</div>
+                    </div>
+                    <div class="option" data-question="8" data-answer="perceiving">
+                        <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=300&h=300&fit=crop"
+                            alt="Adapt as needed">
+                        <div class="option-label">Adapt as needed</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Email Section -->
+            <div class="email-section">
+                <label for="email">Enter your email address to receive your results:</label>
+                <input type="email" id="email" name="email" required placeholder="your.email@example.com">
+            </div>
+
+            <button type="submit" class="submit-btn" id="submitBtn">Submit Quiz</button>
+
+            <div class="loading" id="loading">
+                Analyzing your answers... Please wait.
+            </div>
+
+            <div class="error" id="error"></div>
+
+            <div class="result" id="result">
+                <h2>Your MBTI Personality Type</h2>
+                <p id="resultText"></p>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // Store selected answers
+        const answers = {};
+
+        // Handle option selection
+        document.querySelectorAll('.option').forEach(option => {
+            option.addEventListener('click', function () {
+                const question = this.getAttribute('data-question');
+                const answer = this.getAttribute('data-answer');
+
+                // Remove selected class from other options in the same question
+                document.querySelectorAll(`.option[data-question="${question}"]`).forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+
+                // Add selected class to clicked option
+                this.classList.add('selected');
+
+                // Store answer
+                answers[question] = answer;
+
+                // Update submit button state
+                updateSubmitButton();
+            });
+        });
+
+        // Update submit button state
+        function updateSubmitButton() {
+            const submitBtn = document.getElementById('submitBtn');
+            const allAnswered = Object.keys(answers).length === 8;
+            submitBtn.disabled = !allAnswered;
+        }
+
+        // Handle form submission
+        document.getElementById('quizForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const email = document.getElementById('email').value;
+            const submitBtn = document.getElementById('submitBtn');
+            const loading = document.getElementById('loading');
+            const error = document.getElementById('error');
+            const result = document.getElementById('result');
+
+            // Validate all questions answered
+            if (Object.keys(answers).length !== 8) {
+                error.textContent = 'Please answer all questions before submitting.';
+                error.classList.add('show');
+                return;
+            }
+
+            // Validate email
+            if (!email || !email.includes('@')) {
+                error.textContent = 'Please enter a valid email address.';
+                error.classList.add('show');
+                return;
+            }
+
+            // Hide previous messages
+            error.classList.remove('show');
+            result.classList.remove('show');
+
+            // Show loading state
+            submitBtn.disabled = true;
+            loading.classList.add('show');
+
+            // Prepare data
+            const data = {
+                email: email,
+                answers: answers,
+                timestamp: new Date().toISOString()
+            };
+
+            try {
+                // Replace with your n8n webhook URL
+                const webhookUrl = 'https://clarisza.app.n8n.cloud/webhook/mbti-quiz';
+
+                const response = await fetch(webhookUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+
+                const resultData = await response.json();
+
+                // Debug: Log the response
+                console.log('Response received:', resultData);
+
+                // Hide loading
+                loading.classList.remove('show');
+
+                // Show result
+                const mbtiResult = resultData.mbtiResult || 'Your results have been sent to your email!';
+                
+                if (mbtiResult) {
+                    document.getElementById('resultText').textContent = mbtiResult;
+                    result.classList.add('show');
+
+                    // Scroll to result
+                    result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                } else {
+                    throw new Error('No response received');
+                }
+
+            } catch (err) {
+                loading.classList.remove('show');
+                error.textContent = 'An error occurred. Please try again later. Error: ' + err.message;
+                error.classList.add('show');
+                submitBtn.disabled = false;
+            }
+        });
+
+        // Initialize submit button state
+        updateSubmitButton();
+    </script>
+</body>
+
+</html>
